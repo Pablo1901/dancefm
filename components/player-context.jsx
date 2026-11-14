@@ -36,6 +36,10 @@ export function PlayerProvider({ children }) {
   const [nowPlaying, setNowPlaying] = useState(FALLBACK_TRACK);
   const [history, setHistory] = useState([]);
   const [metadataStale, setMetadataStale] = useState(false);
+  const nowPlayingRef = useRef(FALLBACK_TRACK);
+  useEffect(() => {
+    nowPlayingRef.current = nowPlaying;
+  }, [nowPlaying]);
 
   // ---- audio ------------------------------------------------------------
   useEffect(() => {
@@ -107,7 +111,6 @@ export function PlayerProvider({ children }) {
   useEffect(() => {
     let active = true;
     let timer;
-    let previousTitle = null;
 
     const load = async () => {
       try {
@@ -116,19 +119,48 @@ export function PlayerProvider({ children }) {
         const data = await res.json();
         if (!active) return;
         setMetadataStale(false);
-        if (data.streamTitle && data.streamTitle !== previousTitle) {
-          previousTitle = data.streamTitle;
-          const entry = { ...data, seenAt: Date.now() };
-          setHistory((items) => [
-            entry,
-            ...items.filter((item) => item.streamTitle !== data.streamTitle),
-          ].slice(0, 4));
-        }
         setNowPlaying({ ...FALLBACK_TRACK, ...data });
       } catch {
         if (active) setMetadataStale(true);
       } finally {
         if (active) timer = setTimeout(load, 12000);
+      }
+    };
+
+    load();
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, []);
+
+  // ---- recently played (OnlineRadioBox playlist + iTunes artwork) --------
+  useEffect(() => {
+    let active = true;
+    let timer;
+
+    const load = async () => {
+      try {
+        const res = await fetch("/api/playlist", { cache: "no-store" });
+        if (!res.ok) throw new Error("playlist unavailable");
+        const data = await res.json();
+        if (!active) return;
+        const items = (data.playlist || []).map((entry, index) => ({
+          ...entry,
+          seenAt: entry.playedAt || Date.now() - index * 1000,
+        }));
+        if (items.length) {
+          setHistory(items.slice(0, 80));
+        } else {
+          // fall back to whatever metadata is currently playing
+          setHistory((items_) => (items_.length ? items_ : [nowPlayingRef.current]));
+        }
+      } catch {
+        if (active && nowPlayingRef.current.track) {
+          setHistory((items) => (items.length ? items : [nowPlayingRef.current]));
+        }
+      } finally {
+        if (active) timer = setTimeout(load, 20000);
       }
     };
 

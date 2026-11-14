@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePlayer } from "./player-context";
 import { useLanguage } from "./language-context";
 import { getBerlinZoneLabel, getOnAir } from "@/lib/schedule";
@@ -8,6 +8,47 @@ import { fill } from "@/lib/i18n";
 import { PlayIcon, PauseIcon, VolumeIcon, RadioIcon } from "./icons";
 
 const EQ_BARS = [0.5, 0.85, 0.35, 0.95, 0.6, 0.75, 0.45, 0.9, 0.55];
+
+/** Berlin-hour buckets over the last 12 hours, newest first. */
+function groupByHour(items) {
+  const now = Date.now();
+  const cutoff = now - 12 * 3600000;
+  const groups = [];
+  const byKey = new Map();
+  for (const item of items) {
+    if (!item.playedAt || item.playedAt < cutoff) continue;
+    const date = new Date(item.playedAt);
+    // Berlin time, so the hour headers match the site's schedule clock
+    const hourLabel = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Berlin",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(date);
+    const dayLabel = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Berlin",
+      day: "numeric",
+      month: "short",
+    }).format(date);
+    const key = `${dayLabel} ${hourLabel.slice(0, 2)}`;
+    if (!byKey.has(key)) {
+      const group = { key, dayLabel, hourLabel, items: [] };
+      byKey.set(key, group);
+      groups.push(group);
+    }
+    byKey.get(key).items.push(item);
+  }
+  return groups;
+}
+
+/** "12 min ago" / "2 h ago" style label from a playlist timestamp. */
+function formatPlayedAt(playedAt) {
+  if (!playedAt) return null;
+  const minutes = Math.max(1, Math.round((Date.now() - playedAt) / 60000));
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours} h ago`;
+}
 
 export default function PlayerCard() {
   const {
@@ -28,6 +69,16 @@ export default function PlayerCard() {
   const hasArtwork = Boolean(playerArtwork);
   const [onAir, setOnAir] = useState(null);
   const [zone, setZone] = useState("CET");
+  const [selectedHour, setSelectedHour] = useState(null);
+
+  const hourGroups = useMemo(() => groupByHour(history.slice(0, 200)), [history]);
+
+  // keep a sensible hour selected as new data arrives
+  useEffect(() => {
+    if (hourGroups.length && !hourGroups.some((g) => g.key === selectedHour)) {
+      setSelectedHour(hourGroups[0].key);
+    }
+  }, [hourGroups, selectedHour]);
 
   useEffect(() => {
     const sync = () => {
@@ -147,22 +198,36 @@ export default function PlayerCard() {
 
       <div className="recently">
         <span className="recently-label">{t.player.recentlyPlayed}</span>
+        <div className="recently-hours">
+          {hourGroups.map((group) => (
+            <button
+              key={group.key}
+              type="button"
+              className={`recently-hour-btn ${selectedHour === group.key ? "is-active" : ""}`}
+              onClick={() => setSelectedHour(group.key)}
+            >
+              <span className="recently-hour-time">{group.hourLabel.slice(0, 2)}:00</span>
+              <span className="recently-hour-count">{group.items.length}</span>
+            </button>
+          ))}
+        </div>
         <div className="recently-list">
           {history.length === 0 ? (
             <span className="recently-empty">{t.player.recentEmpty}</span>
           ) : (
-            history.slice(0, 3).map((item) => (
-              <div className="recently-item" key={`${item.streamTitle}-${item.seenAt}`}>
+            (hourGroups.find((g) => g.key === selectedHour)?.items ?? []).map((item) => (
+              <div className="recently-item" key={`${item.streamTitle}-${item.playedAt}`}>
                 <img
                   src={item.artwork || "/brand/logo-square.webp"}
                   alt=""
                   className="recently-cover"
-                  width="40"
-                  height="40"
+                  width="44"
+                  height="44"
                 />
                 <span className="recently-text">
                   <span className="recently-track">{item.track}</span>
                   <span className="recently-artist">{item.artist}</span>
+                  <span className="recently-time">{formatPlayedAt(item.playedAt)}</span>
                 </span>
               </div>
             ))
