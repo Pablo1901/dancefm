@@ -5,7 +5,7 @@ import { usePlayer } from "./player-context";
 import { useLanguage } from "./language-context";
 import { getBerlinZoneLabel, getOnAir } from "@/lib/schedule";
 import { fill } from "@/lib/i18n";
-import { PlayIcon, PauseIcon, VolumeIcon, RadioIcon } from "./icons";
+import { PlayIcon, PauseIcon, VolumeIcon, RadioIcon, AppleMusicIcon, GoogleIcon } from "./icons";
 
 const EQ_BARS = [0.5, 0.85, 0.35, 0.95, 0.6, 0.75, 0.45, 0.9, 0.55];
 
@@ -142,9 +142,15 @@ export default function PlayerCard() {
               </p>
             ) : null}
             <p className="player-kicker">{t.player.nowPlaying}</p>
-            <h2 className="player-track" title={nowPlaying.track}>
+            <a
+              className="player-track"
+              href={nowPlaying.appleUrl || `https://www.google.com/search?q=${encodeURIComponent(`${nowPlaying.artist || ""} ${nowPlaying.track}`.trim())}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={nowPlaying.track}
+            >
               {nowPlaying.track}
-            </h2>
+            </a>
             <p className="player-artist">{nowPlaying.artist}</p>
             {nowPlaying.album ? (
               <p className="player-album" title={nowPlaying.album}>
@@ -215,8 +221,13 @@ export default function PlayerCard() {
           {history.length === 0 ? (
             <span className="recently-empty">{t.player.recentEmpty}</span>
           ) : (
-            (hourGroups.find((g) => g.key === selectedHour)?.items ?? []).map((item) => (
-              <div className="recently-item" key={`${item.streamTitle}-${item.playedAt}`}>
+            (hourGroups.find((g) => g.key === selectedHour)?.items ?? []).map((item) => {
+              const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(`${item.artist || ""} ${item.track}`.trim())}`;
+              return (
+              <div
+                className="recently-item"
+                key={`${item.streamTitle}-${item.playedAt}`}
+              >
                 <img
                   src={item.artwork || "/brand/logo-square.webp"}
                   alt=""
@@ -229,8 +240,29 @@ export default function PlayerCard() {
                   <span className="recently-artist">{item.artist}</span>
                   <span className="recently-time">{formatPlayedAt(item.playedAt)}</span>
                 </span>
+                <span className="recently-links">
+                  <a
+                    className="recently-link"
+                    href={item.appleUrl || googleUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Apple Music / search"
+                  >
+                    <AppleMusicIcon className="recently-link-icon" />
+                  </a>
+                  <a
+                    className="recently-link"
+                    href={googleUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Search on Google"
+                  >
+                    <GoogleIcon className="recently-link-icon" />
+                  </a>
+                </span>
               </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
