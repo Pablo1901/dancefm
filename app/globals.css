@@ -912,6 +912,22 @@ section[id] {
   max-width: 104px;
 }
 
+.volume-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  margin: -4px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.volume-button:hover .volume-icon,
+.volume-button[aria-pressed="true"] .volume-icon {
+  color: var(--foreground, inherit);
+}
+
 .volume-icon {
   color: var(--muted);
 }

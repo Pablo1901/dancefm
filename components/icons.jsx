@@ -15,6 +15,16 @@ export function PauseIcon({ className = "" }) {
   );
 }
 
+export function MutedIcon({ className = "" }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M4 9.5h3l4.2-3.4v11.8L7 14.5H4z" />
+      <path d="m15.5 9.5 5 5" />
+      <path d="m20.5 9.5-5 5" />
+    </svg>
+  );
+}
+
 export function VolumeIcon({ className = "" }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">

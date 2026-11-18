@@ -33,6 +33,7 @@ export function PlayerProvider({ children }) {
   const [buffering, setBuffering] = useState(false);
   const [error, setError] = useState(null);
   const [volume, setVolumeState] = useState(0.8);
+  const [muted, setMuted] = useState(false);
   const [nowPlaying, setNowPlaying] = useState(FALLBACK_TRACK);
   const [history, setHistory] = useState([]);
   const [metadataStale, setMetadataStale] = useState(false);
@@ -46,6 +47,7 @@ export function PlayerProvider({ children }) {
     const audio = audioRef.current;
     if (!audio) return;
     audio.volume = volume;
+    audio.muted = muted;
 
     const onPlaying = () => {
       setPlaying(true);
@@ -72,7 +74,7 @@ export function PlayerProvider({ children }) {
       audio.removeEventListener("stalled", onWaiting);
       audio.removeEventListener("error", onError);
     };
-  }, [volume, t]);
+  }, [volume, muted, t]);
 
   useEffect(() => {
     const stored = window.localStorage.getItem("dancefm-volume");
@@ -87,6 +89,10 @@ export function PlayerProvider({ children }) {
     setVolumeState(clamped);
     if (audioRef.current) audioRef.current.volume = clamped;
     window.localStorage.setItem("dancefm-volume", String(clamped));
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    setMuted((current) => !current);
   }, []);
 
   const toggle = useCallback(async () => {
@@ -259,6 +265,8 @@ export function PlayerProvider({ children }) {
       error,
       volume,
       setVolume,
+      muted,
+      toggleMute,
       toggle,
       nowPlaying,
       history,
@@ -271,6 +279,8 @@ export function PlayerProvider({ children }) {
       error,
       volume,
       setVolume,
+      muted,
+      toggleMute,
       toggle,
       nowPlaying,
       history,

@@ -16,22 +16,38 @@ const STORAGE_KEY = "dancefm-language";
 export function LanguageProvider({ children }) {
   const [lang, setLangState] = useState(DEFAULT_LANGUAGE);
 
-  // Pick up a saved choice, or start in German for German browsers.
+  // Pick up a saved choice; otherwise detect via IP geo (German visitors get
+  // German), falling back to browser language.
   useEffect(() => {
     let stored = null;
     try {
       stored = window.localStorage.getItem(STORAGE_KEY);
     } catch {
-      // storage blocked — fall through to browser language
+      // storage blocked — fall through to geo/browser detection
     }
 
     if (stored === "en" || stored === "de") {
       setLangState(stored);
       return;
     }
+
+    let active = true;
+
+    // Instant guess from the browser locale while the geo lookup runs.
     if (typeof navigator !== "undefined" && /^de\b/i.test(navigator.language || "")) {
       setLangState("de");
     }
+
+    fetch("/api/geo", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (active && data?.language === "de") setLangState("de");
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {

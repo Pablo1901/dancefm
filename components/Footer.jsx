@@ -33,6 +33,15 @@ export default function Footer() {
             <div className="footer-col">
               <p className="footer-heading">{t.footer.elsewhere}</p>
               <a
+                href="https://onlineradiobox.com/de/pablo/"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="footer-external"
+              >
+                Online Radio Box
+                <ArrowIcon className="icon-xs" />
+              </a>
+              <a
                 href="https://djmag.com"
                 target="_blank"
                 rel="noreferrer noopener"

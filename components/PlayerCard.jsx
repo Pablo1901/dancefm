@@ -5,7 +5,7 @@ import { usePlayer } from "./player-context";
 import { useLanguage } from "./language-context";
 import { getBerlinZoneLabel, getOnAir } from "@/lib/schedule";
 import { fill } from "@/lib/i18n";
-import { PlayIcon, PauseIcon, VolumeIcon, RadioIcon, AppleMusicIcon, GoogleIcon } from "./icons";
+import { PlayIcon, PauseIcon, VolumeIcon, MutedIcon, RadioIcon, AppleMusicIcon, GoogleIcon } from "./icons";
 
 const EQ_BARS = [0.5, 0.85, 0.35, 0.95, 0.6, 0.75, 0.45, 0.9, 0.55];
 
@@ -58,6 +58,8 @@ export default function PlayerCard() {
     toggle,
     volume,
     setVolume,
+    muted,
+    toggleMute,
     nowPlaying,
     history,
     metadataStale,
@@ -172,7 +174,15 @@ export default function PlayerCard() {
           </button>
 
           <div className="volume-control">
-            <VolumeIcon className="icon-sm volume-icon" />
+            <button
+              type="button"
+              className="volume-button"
+              onClick={toggleMute}
+              aria-label={muted ? t.player.unmute : t.player.mute}
+              aria-pressed={muted}
+            >
+              {muted ? <MutedIcon className="icon-sm volume-icon" /> : <VolumeIcon className="icon-sm volume-icon" />}
+            </button>
             <input
               type="range"
               min="0"

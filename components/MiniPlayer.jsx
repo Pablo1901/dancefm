@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { usePlayer } from "./player-context";
 import { useLanguage } from "./language-context";
-import { PlayIcon, PauseIcon, VolumeIcon } from "./icons";
+import { PlayIcon, PauseIcon, VolumeIcon, MutedIcon } from "./icons";
 
 export default function MiniPlayer() {
-  const { playing, buffering, toggle, nowPlaying, volume, setVolume, playerArtwork } = usePlayer();
+  const { playing, buffering, toggle, nowPlaying, volume, setVolume, muted, toggleMute, playerArtwork } = usePlayer();
   const { t } = useLanguage();
   const [visible, setVisible] = useState(false);
 
@@ -69,7 +69,16 @@ export default function MiniPlayer() {
 
         <div className="mini-controls">
           <div className="volume-control mini-volume">
-            <VolumeIcon className="icon-xs volume-icon" />
+            <button
+              type="button"
+              className="volume-button"
+              onClick={toggleMute}
+              aria-label={muted ? t.player.unmute : t.player.mute}
+              aria-pressed={muted}
+              tabIndex={visible ? 0 : -1}
+            >
+              {muted ? <MutedIcon className="icon-xs volume-icon" /> : <VolumeIcon className="icon-xs volume-icon" />}
+            </button>
             <input
               type="range"
               min="0"
